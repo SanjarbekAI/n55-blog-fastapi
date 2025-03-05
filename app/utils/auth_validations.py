@@ -1,5 +1,4 @@
-from http.client import HTTPException
-
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.schemas import UserIn
@@ -18,16 +17,16 @@ class AuthValidation(object):
 
     async def match_passwords(self):
         if self.user.password1 != self.user.password2:
-            raise HTTPException("Passwords does not match")
+            raise HTTPException(status_code=400, detail="Passwords does not match")
 
     async def validate_email(self):
         user = await get_user_by_email(email=self.user.email, db=self.db)
         if user:
-            raise HTTPException("User with this email is already exists")
+            raise HTTPException(status_code=400, detail="User with this email is already exists")
         if not self.user.email.endswith('@gmail.com'):
-            raise HTTPException("Email is not valid")
+            raise HTTPException(status_code=400, detail="Email is not valid")
 
     async def validate_username(self):
         user = await get_user_by_username(username=self.user.username, db=self.db)
         if user:
-            raise HTTPException("User with this username is already exists")
+            raise HTTPException(status_code=400, detail="User with this username is already exists")
