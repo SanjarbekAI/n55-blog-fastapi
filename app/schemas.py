@@ -4,10 +4,17 @@ from pydantic import BaseModel, Field
 
 
 class UserIn(BaseModel):
-    username: str
-    age: int
-    phone_number: str | None = Field(max_length=13, min_length=13)
+    username: str = Field(max_length=128)
+    email: str = Field(max_length=128)
+    password1: str = Field(max_length=128)
+    password2: str = Field(max_length=128)
+    first_name: str | None = None
+    last__name: str | None = None
 
 
-class UserOut(UserIn):
+class UserOut(BaseModel):
     uuid: UUID
+    username: str
+    email: str = Field(max_length=128)
+    first_name: str | None = None
+    last_name: str | None = None
