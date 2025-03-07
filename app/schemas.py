@@ -1,6 +1,7 @@
+from typing import List
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 
 
 class UserIn(BaseModel):
@@ -18,3 +19,15 @@ class UserOut(BaseModel):
     email: str = Field(max_length=128)
     first_name: str | None = None
     last_name: str | None = None
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    username: str | None = None
+
+class EmailSchema(BaseModel):
+    email: List[EmailStr]

@@ -1,6 +1,10 @@
+import datetime
 import uuid
 
 from sqlalchemy import Column, Integer, String, Boolean, Uuid
+from sqlalchemy.dialects.postgresql import TIMESTAMP
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.sql.functions import func
 
 from core.database import Base
 
@@ -17,3 +21,6 @@ class User(Base):
     password = Column(String(256), nullable=False)
     is_active = Column(Boolean, default=False)
     is_superuser = Column(Boolean, default=False)
+
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
