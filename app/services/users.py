@@ -4,13 +4,13 @@ import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt import InvalidTokenError
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.schemas import TokenData
 from app.utils.hash_password import verify_password
 from core.config import SECRET_KEY, ALGORITHM
-from core.models import User
+from core.models import User, Verification
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -69,3 +69,9 @@ async def get_current_active_user(
     if current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+
+async def delete_verification_code(db: AsyncSession, verification):
+    query = delete(Verification).where(Verification.id == verification.id)
+    await db.execute(query)
+    await db.commit()

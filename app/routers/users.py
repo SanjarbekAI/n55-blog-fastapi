@@ -3,17 +3,15 @@ from typing import Annotated
 
 from fastapi import APIRouter, status, Depends, HTTPException, BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi_mail import MessageSchema, MessageType, FastMail
-from jinja2 import Template
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette.responses import JSONResponse
 
-from app.schemas import UserIn, UserOut, Token, EmailSchema
+from app.schemas import UserIn, UserOut, Token
 from app.services.users import authenticate_user
-from app.utils.auth_validations import AuthValidation
+from app.utils.auth_validations import AuthValidation, generate_verification_code
+from app.utils.email import send_in_background
 from app.utils.hash_password import get_password_hash
 from app.utils.jwt_token import create_access_token
-from core.config import ACCESS_TOKEN_EXPIRE_MINUTES, conf
+from core.config import ACCESS_TOKEN_EXPIRE_MINUTES
 from core.database import get_db
 from core.models import User
 
@@ -24,7 +22,7 @@ router = APIRouter(
 
 
 @router.post('/register/', status_code=status.HTTP_201_CREATED, response_model=UserOut)
-async def register(user: UserIn, db: AsyncSession = Depends(get_db)):
+async def register(user: UserIn, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
     validation = AuthValidation(user=user, db=db)
     await validation.validate()
 
@@ -37,6 +35,10 @@ async def register(user: UserIn, db: AsyncSession = Depends(get_db)):
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
+
+    verification = await generate_verification_code(user=new_user, db=db)
+    await send_in_background(user=new_user, code=verification.code, background_tasks=background_tasks)
+
     return new_user
 
 
@@ -63,29 +65,3 @@ async def login_for_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     return Token(access_token=access_token, token_type="bearer")
-
-
-@router.post('/email')
-async def send_in_background(
-        background_tasks: BackgroundTasks,
-        email: EmailSchema
-) -> JSONResponse:
-    with open("templates/email_template.html", "r") as file:
-        html_template = file.read()
-
-    template = Template(html_template)
-    html_content = template.render(name="John Doe")
-
-    message = MessageSchema(
-        subject="FastAPI-Mail HTML Email",
-        recipients=email.email,
-        body=html_content,
-        subtype=MessageType.html
-    )
-
-    fm = FastMail(conf)
-
-    # Send email as a background task
-    background_tasks.add_task(fm.send_message, message, template_name=None)
-
-    return JSONResponse(status_code=200, content={"message": "HTML Email sent successfully"})

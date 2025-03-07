@@ -1,4 +1,3 @@
-from typing import List
 from uuid import UUID
 
 from pydantic import BaseModel, Field, EmailStr
@@ -29,5 +28,6 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     username: str | None = None
 
+
 class EmailSchema(BaseModel):
-    email: List[EmailStr]
+    email: EmailStr
